@@ -2,32 +2,50 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Snake Game</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}
-body{background:#0f172a;color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:10px}
-h1{font-size:28px}
-#gameContainer{position:relative}
-canvas{background:#020617;border:3px solid #38bdf8;border-radius:8px}
-#scoreBoard{display:flex;gap:20px;font-size:18px}
-#controls{display:none;gap:10px;margin-top:10px}
-.ctrl{width:60px;height:60px;background:#1e293b;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;border:2px solid #38bdf8;user-select:none}
-.ctrl:active{background:#38bdf8}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;-webkit-user-select:none;user-select:none}
+html,body{width:100%;height:100%;overflow:hidden}
+body{background:linear-gradient(135deg,#0a0e27 0%,#1a1a3e 50%,#0f172a 100%);color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;position:relative}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 30% 50%,rgba(59,130,246,0.03),transparent 50%),radial-gradient(circle at 70% 50%,rgba(139,92,246,0.03),transparent 50%);pointer-events:none;z-index:0}
+h1{font-size:2.5rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;background:linear-gradient(135deg,#60a5fa,#a78bfa,#ec4899);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:1rem;text-shadow:0 0 30px rgba(96,165,250,0.3);z-index:1;position:relative}
+#scoreBoard{display:flex;gap:3rem;font-size:1.2rem;font-weight:600;margin-bottom:2rem;z-index:1;position:relative;background:rgba(30,41,59,0.4);padding:1.5rem 3rem;border-radius:20px;backdrop-filter:blur(10px);border:1px solid rgba(96,165,250,0.1)}
+#scoreBoard div{display:flex;align-items:center;gap:0.5rem}
+#scoreBoard span{color:#60a5fa;font-size:1.4rem}
+#gameContainer{position:relative;z-index:1;border-radius:30px;overflow:hidden;box-shadow:0 0 60px rgba(96,165,250,0.2),0 0 30px rgba(139,92,246,0.2);backdrop-filter:blur(5px);background:rgba(2,6,23,0.5)}
+canvas{display:block;background:linear-gradient(135deg,#020617 0%,#0f172a 100%);width:100%;height:100%;max-width:min(90vh,500px);aspect-ratio:1}
+#controls{display:none;gap:2px;margin-top:2rem;z-index:1;position:relative}
+.ctrl{width:70px;height:70px;background:linear-gradient(135deg,#3b82f6 0%,#1e3a8a 100%);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;border:none;box-shadow:0 5px 15px rgba(59,130,246,0.3);cursor:pointer;transition:all 0.2s ease;touch-action:none}
+.ctrl:active{transform:scale(0.95);box-shadow:0 0 20px rgba(59,130,246,0.6)}
+.ctrl:hover{background:linear-gradient(135deg,#60a5fa 0%,#2563eb 100%);box-shadow:0 8px 20px rgba(96,165,250,0.4)}
 @media (max-width:768px){
-#controls{display:grid;grid-template-columns:60px 60px 60px;grid-template-rows:60px 60px;justify-content:center}
+h1{font-size:2rem;margin-bottom:0.8rem}
+#scoreBoard{gap:1.5rem;font-size:1rem;margin-bottom:1rem;padding:1rem 1.5rem}
+#scoreBoard span{font-size:1.2rem}
+#controls{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr;justify-content:center;gap:8px;width:calc(70px*3+16px)}
 #up{grid-column:2}
 #left{grid-row:2}
 #down{grid-column:2;grid-row:2}
 #right{grid-column:3;grid-row:2}
+.ctrl{width:60px;height:60px;font-size:1.5rem}
+}
+@media (max-width:480px){
+body{gap:0}
+h1{font-size:1.5rem;margin-bottom:0.5rem}
+#scoreBoard{gap:1rem;font-size:0.9rem;margin-bottom:0.8rem;padding:0.8rem 1rem}
+#scoreBoard span{font-size:1rem}
+canvas{max-width:min(80vh,450px)}
+#controls{width:calc(60px*3+16px)}
+.ctrl{width:55px;height:55px;font-size:1.3rem}
 }
 </style>
 </head>
 <body>
-<h1>Snake</h1>
+<h1>🐍 SNAKE</h1>
 <div id="scoreBoard">
-<div>Puntos: <span id="score">0</span></div>
-<div>Record: <span id="highScore">0</span></div>
+<div>⭐ Puntos: <span id="score">0</span></div>
+<div>🏆 Record: <span id="highScore">0</span></div>
 </div>
 <div id="gameContainer">
 <canvas id="game" width="400" height="400"></canvas>
@@ -51,18 +69,63 @@ let velocityY=0
 let food={x:5,y:5}
 let score=0
 let highScore=localStorage.getItem('snakeHighScore')||0
+let gameTime=0
 const scoreEl=document.getElementById('score')
 const highScoreEl=document.getElementById('highScore')
 highScoreEl.textContent=highScore
+let audioContext
+
+function initAudio(){
+if(!audioContext){
+audioContext=new(window.AudioContext||window.webkitAudioContext)()
+}
+}
+
+function playEatSound(){
+if(!audioContext) initAudio()
+const now=audioContext.currentTime
+const osc=audioContext.createOscillator()
+const gain=audioContext.createGain()
+osc.connect(gain)
+gain.connect(audioContext.destination)
+osc.frequency.setValueAtTime(800,now)
+osc.frequency.setValueAtTime(1200,now+0.1)
+gain.gain.setValueAtTime(0.3,now)
+gain.gain.setValueAtTime(0,now+0.2)
+osc.start(now)
+osc.stop(now+0.2)
+}
+
+function playLoseSound(){
+if(!audioContext) initAudio()
+const now=audioContext.currentTime
+for(let i=0;i<3;i++){
+const osc=audioContext.createOscillator()
+const gain=audioContext.createGain()
+osc.connect(gain)
+gain.connect(audioContext.destination)
+osc.frequency.setValueAtTime(400-i*100,now+i*0.1)
+gain.gain.setValueAtTime(0.2,now+i*0.1)
+gain.gain.setValueAtTime(0,now+i*0.1+0.15)
+osc.start(now+i*0.1)
+osc.stop(now+i*0.1+0.15)
+}
+}
 
 function randomFood(){
-food.x=Math.floor(Math.random()*tileCount)
-food.y=Math.floor(Math.random()*tileCount)
+let newX,newY
+do{
+newX=Math.floor(Math.random()*tileCount)
+newY=Math.floor(Math.random()*tileCount)
+}while(snake.some(s=>s.x===newX&&s.y===newY))
+food.x=newX
+food.y=newY
 }
 
 function gameLoop(){
 update()
 render()
+gameTime++
 }
 
 function update(){
@@ -72,17 +135,20 @@ snake.unshift(head)
 if(head.x===food.x&&head.y===food.y){
 score++
 scoreEl.textContent=score
+playEatSound()
 randomFood()
 }else{
 snake.pop()
 }
 
 if(head.x<0||head.y<0||head.x>=tileCount||head.y>=tileCount){
+playLoseSound()
 resetGame()
 }
 
 for(let i=1;i<snake.length;i++){
 if(head.x===snake[i].x&&head.y===snake[i].y){
+playLoseSound()
 resetGame()
 }
 }
@@ -92,13 +158,98 @@ function render(){
 ctx.fillStyle="#020617"
 ctx.fillRect(0,0,canvas.width,canvas.height)
 
-ctx.fillStyle="#22c55e"
-for(const part of snake){
-ctx.fillRect(part.x*grid,part.y*grid,grid-2,grid-2)
-}
+// Efecto de brillo sutil en el fondo
+const grad=ctx.createLinearGradient(0,0,canvas.width,canvas.height)
+grad.addColorStop(0,'rgba(59,130,246,0.05)')
+grad.addColorStop(1,'rgba(139,92,246,0.05)')
+ctx.fillStyle=grad
+ctx.fillRect(0,0,canvas.width,canvas.height)
 
-ctx.fillStyle="#ef4444"
-ctx.fillRect(food.x*grid,food.y*grid,grid-2,grid-2)
+// Dibujar conexiones fluidas entre segmentos
+ctx.strokeStyle='rgba(34,197,94,0.3)'
+ctx.lineWidth=12
+ctx.lineCap='round'
+ctx.lineJoin='round'
+ctx.beginPath()
+ctx.moveTo(snake[0].x*grid+grid/2,snake[0].y*grid+grid/2)
+for(let i=1;i<snake.length;i++){
+ctx.lineTo(snake[i].x*grid+grid/2,snake[i].y*grid+grid/2)
+}
+ctx.stroke()
+
+// Dibujar serpiente con segmentos circulares fluidos
+for(let i=0;i<snake.length;i++){
+const part=snake[i]
+const alpha=1-(i/snake.length)*0.4
+ctx.globalAlpha=alpha
+const centerX=part.x*grid+grid/2
+const centerY=part.y*grid+grid/2
+const radius=grid/2-1
+
+if(i===0){
+// Cabeza con brillo más pronunciado
+const headGrad=ctx.createRadialGradient(centerX-2,centerY-2,0,centerX,centerY,radius)
+headGrad.addColorStop(0,'#00ff88')
+headGrad.addColorStop(0.7,'#00cc66')
+headGrad.addColorStop(1,'#009944')
+ctx.fillStyle=headGrad
+ctx.shadowColor='rgba(0,255,136,0.9)'
+ctx.shadowBlur=20
+ctx.shadowOffsetX=0
+ctx.shadowOffsetY=0
+ctx.beginPath()
+ctx.arc(centerX,centerY,radius,0,Math.PI*2)
+ctx.fill()
+// Pupilas con brillo
+ctx.fillStyle='#000'
+ctx.globalAlpha=1
+const pupilX=radius*0.4
+const pupilY=-radius*0.3
+ctx.beginPath()
+ctx.arc(centerX-pupilX,centerY+pupilY,2.5,0,Math.PI*2)
+ctx.fill()
+ctx.beginPath()
+ctx.arc(centerX+pupilX,centerY+pupilY,2.5,0,Math.PI*2)
+ctx.fill()
+// Brillo en los ojos
+ctx.fillStyle='rgba(255,255,255,0.6)'
+ctx.beginPath()
+ctx.arc(centerX-pupilX+1,centerY+pupilY-1,1,0,Math.PI*2)
+ctx.fill()
+ctx.beginPath()
+ctx.arc(centerX+pupilX+1,centerY+pupilY-1,1,0,Math.PI*2)
+ctx.fill()
+}else{
+// Cuerpo fluido con gradiente radial
+const bodyGrad=ctx.createRadialGradient(centerX-1,centerY-1,0,centerX,centerY,radius)
+bodyGrad.addColorStop(0,'#22c55e')
+bodyGrad.addColorStop(0.6,'#16a34a')
+bodyGrad.addColorStop(1,'#0d6d2a')
+ctx.fillStyle=bodyGrad
+ctx.shadowColor='rgba(34,197,94,0.6)'
+ctx.shadowBlur=12
+ctx.beginPath()
+ctx.arc(centerX,centerY,radius,0,Math.PI*2)
+ctx.fill()
+}
+}
+ctx.globalAlpha=1
+ctx.shadowColor='transparent'
+
+// Dibujar comida con animación
+const pulse=Math.sin(gameTime*0.1)*0.3+0.7
+const foodGradient=ctx.createRadialGradient(food.x*grid+grid/2,food.y*grid+grid/2,0,food.x*grid+grid/2,food.y*grid+grid/2,grid/2)
+foodGradient.addColorStop(0,'#ff6b6b')
+foodGradient.addColorStop(1,'#ee5a6f')
+ctx.fillStyle=foodGradient
+ctx.shadowColor='rgba(255,107,107,0.8)'
+ctx.shadowBlur=20*pulse
+ctx.shadowOffsetX=0
+ctx.shadowOffsetY=0
+ctx.beginPath()
+ctx.arc(food.x*grid+grid/2,food.y*grid+grid/2,grid/2-2,0,Math.PI*2)
+ctx.fill()
+ctx.shadowColor='transparent'
 }
 
 function resetGame(){
@@ -113,6 +264,7 @@ snake=[{x:10,y:10}]
 velocityX=0
 velocityY=0
 randomFood()
+gameTime=0
 }
 
 function changeDirection(x,y){
@@ -136,10 +288,10 @@ const down=document.getElementById('down')
 const left=document.getElementById('left')
 const right=document.getElementById('right')
 
-up?.addEventListener('touchstart',()=>changeDirection(0,-1))
-down?.addEventListener('touchstart',()=>changeDirection(0,1))
-left?.addEventListener('touchstart',()=>changeDirection(-1,0))
-right?.addEventListener('touchstart',()=>changeDirection(1,0))
+up?.addEventListener('touchstart',()=>changeDirection(0,-1),{passive:true})
+down?.addEventListener('touchstart',()=>changeDirection(0,1),{passive:true})
+left?.addEventListener('touchstart',()=>changeDirection(-1,0),{passive:true})
+right?.addEventListener('touchstart',()=>changeDirection(1,0),{passive:true})
 
 // swipe mobile
 let startX=0
@@ -147,7 +299,7 @@ let startY=0
 canvas.addEventListener('touchstart',e=>{
 startX=e.touches[0].clientX
 startY=e.touches[0].clientY
-})
+},{passive:true})
 
 canvas.addEventListener('touchend',e=>{
 let dx=e.changedTouches[0].clientX-startX
@@ -160,7 +312,7 @@ else changeDirection(-1,0)
 if(dy>0) changeDirection(0,1)
 else changeDirection(0,-1)
 }
-})
+},{passive:true})
 
 setInterval(gameLoop,120)
 randomFood()
